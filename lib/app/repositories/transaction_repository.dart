@@ -47,7 +47,6 @@ class TransactionRepository {
   }
 
   //CRIA TRANSAÇÃO
-
   Future<void> sendTransaction(TransactionPayload payload) async {
     try {
       final String token = await _getAuthToken();
@@ -82,5 +81,48 @@ class TransactionRepository {
     debugPrint("JSON GERADO COM SUCESSO:");
     debugPrint(jsonString);
     debugPrint("------------------------------------------------");
+  }
+
+  // POLLING
+  Future<Map<String, dynamic>?> checkPaymentStatus(
+    String meuCorrelationId,
+  ) async {
+    try {
+      final response = await _dio.get(
+        PayerConfig.pollingUrl,
+        options: Options(headers: {'Accept': 'application/json'}),
+      );
+
+      final List<dynamic> requests = response.data['data'];
+
+      if (requests.isEmpty) return null;
+
+      // PROCURA NA LISTA: Vamos varrer todas as mensagens até achar a nossa
+      for (var request in requests) {
+        final String contentString = request['content'];
+
+        // Dica de segurança: verificar se é um JSON válido antes de tentar ler
+        if (contentString.isEmpty) continue;
+
+        try {
+          final Map<String, dynamic> payerData = jsonDecode(contentString);
+
+          // O PULO DO GATO 😺:
+          // Só retorna se o ID da mensagem for igual ao ID que nós enviamos
+          if (payerData['correlationId'] == meuCorrelationId) {
+            return payerData;
+          }
+        } catch (e) {
+          // Se o JSON estiver quebrado, ignora e vai para o próximo
+          continue;
+        }
+      }
+
+      // Se varreu tudo e não achou o nosso ID
+      return null;
+    } catch (e) {
+      debugPrint("⚠️ Erro no Polling: $e");
+      return null;
+    }
   }
 }

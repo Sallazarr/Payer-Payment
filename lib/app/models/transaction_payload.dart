@@ -7,6 +7,7 @@ class TransactionPayload {
   final String paymentType;
   final String paymentMethodSubType;
   final int installments;
+  final String? customCorrelationId;
 
   TransactionPayload({
     required this.value,
@@ -14,6 +15,7 @@ class TransactionPayload {
     required this.paymentType,
     required this.installments,
     required this.paymentMethodSubType,
+    this.customCorrelationId,
   });
 
   Map<String, dynamic> toJson() {
@@ -22,7 +24,7 @@ class TransactionPayload {
       "origin": "PAGAMENTO",
       "data": {
         "callbackUrl": PayerConfig.callbackUrl,
-        "correlationId": const Uuid().v4(),
+        "correlationId": customCorrelationId ?? const Uuid().v4(),
         "flow": "SYNC",
         "automationName": PayerConfig.automationName, // fornecido no onboarding
         "receiver": {
