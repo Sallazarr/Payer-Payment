@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart'; // Se tiver usando fontes
+import 'package:payer_payment/app/core/app_colors.dart';
 import 'package:payer_payment/app/views/home_page.dart';
 // Importe o caminho correto da sua HomePage
 
@@ -18,7 +19,7 @@ class MyApp extends StatelessWidget {
       debugShowCheckedModeBanner: false, // Tira a faixa "Debug" do canto
       theme: ThemeData(
         useMaterial3: true,
-        colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF0056D2)),
+        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.orange),
       ),
       // AQUI conectamos a HomePage
       home: const HomePage(),

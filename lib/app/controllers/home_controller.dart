@@ -3,97 +3,114 @@ import 'package:flutter/material.dart';
 import 'package:payer_payment/app/models/transaction_payload.dart';
 import 'package:payer_payment/app/repositories/transaction_repository.dart';
 import 'package:uuid/uuid.dart';
-
-// Import do Banco de Dados
 import 'package:payer_payment/app/database/database_helper.dart';
 
 enum HomeState { idle, loading, success, error }
 
 class HomeController {
   final _repository = TransactionRepository();
-
   final state = ValueNotifier<HomeState>(HomeState.idle);
-
   final valueController = TextEditingController();
+
   String paymentType = 'CREDIT';
   int installments = 1;
+  String? currentErrorMessage;
 
   Future<void> startTransaction() async {
     if (valueController.text.isEmpty) {
+      currentErrorMessage = "Digite um valor válido.";
       state.value = HomeState.error;
       return;
     }
+
+    currentErrorMessage = null;
     state.value = HomeState.loading;
 
     try {
-      // 1. Prepara e Envia
       final double amount = UtilBrasilFields.converterMoedaParaDouble(
         valueController.text,
       );
-      String subType = installments > 1 ? "FINANCED_NO_FEES" : "FULL_PAYMENT";
-
       final String correlationId = const Uuid().v4();
+
+      // Configuração do Payload (Mantendo sua lógica do Pix que funciona)
+      String finalPaymentMethod;
+      String finalPaymentType;
+      String finalSubType;
+
+      if (paymentType == 'PIX') {
+        finalPaymentMethod = "PIX";
+        finalPaymentType = "DEBIT";
+        finalSubType = "FULL_PAYMENT";
+      } else {
+        finalPaymentMethod = "CARD";
+        finalPaymentType = paymentType;
+        finalSubType = installments > 1 ? "FINANCED_NO_FEES" : "FULL_PAYMENT";
+      }
 
       final payload = TransactionPayload(
         value: amount,
-        paymentMethod: "CARD",
-        paymentType: paymentType,
-        installments: paymentType == "DEBIT" ? 1 : installments,
-        paymentMethodSubType: subType,
+        paymentMethod: finalPaymentMethod,
+        paymentType: finalPaymentType,
+        installments: (paymentType == 'PIX' || paymentType == 'DEBIT')
+            ? 1
+            : installments,
+        paymentMethodSubType: finalSubType,
         customCorrelationId: correlationId,
       );
 
       await _repository.sendTransaction(payload);
 
-      // 2. Loop de Polling Inteligente 🧠
-      debugPrint("⏳ Transação enviada! Aguardando o Simulador responder...");
+      debugPrint("⏳ Transação enviada! Aguardando...");
 
       bool paid = false;
-      String? comprovante; // Vamos guardar o texto do recibo aqui
 
       for (int i = 0; i < 15; i++) {
-        // Aumentei para 15x (45seg) por segurança
         await Future.delayed(const Duration(seconds: 3));
-
         final response = await _repository.checkPaymentStatus(correlationId);
 
         if (response != null) {
-          // Agora usamos os nomes EXATOS dos campos do seu JSON
-          final status = response['statusTransaction']; // Deve ser "APPROVED"
-          final idTransacao = response['idPayer'];
+          final status = response['statusTransaction'];
+          final idTransacao = response['idPayer']; // ID que vem da Payer
 
-          debugPrint("📩 Status recebido: $status | ID: $idTransacao");
+          debugPrint("📩 Status: $status | ID: $idTransacao");
 
+          // --- CASO 1: APROVADO ✅ ---
           if (status == "APPROVED") {
             paid = true;
-            // Pega o comprovante bonitinho que o simulador mandou
-            comprovante = response['shopTextReceipt'];
+            final comprovante = response['shopTextReceipt'];
 
-            debugPrint("🧾 COMPROVANTE RECEBIDO:\n$comprovante");
+            // Salva como Aprovado
+            _saveToDatabase(
+              id: idTransacao,
+              amount: amount,
+              status: status,
+              info: comprovante ?? "Sem comprovante",
+            );
 
-            // --- 💾 SALVANDO NO SQLITE (BLINDADO) ---
-            try {
-              await DatabaseHelper().insertTransaction({
-                'transactionId': idTransacao ?? 'N/A',
-                'value': amount,
-                'status': status,
-                'date': DateTime.now().toString(),
-                'receiptText': comprovante ?? 'Sem comprovante disponível',
-              });
-              debugPrint("✅ Venda salva no histórico local com sucesso!");
-            } catch (dbError) {
-              // Se der erro no banco, SÓ avisa no log.
-              // NÃO podemos travar o App, pois o cliente JÁ PAGOU!
-              debugPrint(
-                "⚠️ Erro ao salvar no banco (mas o pagamento ocorreu): $dbError",
-              );
+            break;
+
+            // --- CASO 2: NEGADO/CANCELADO/ABORTADO ❌ ---
+          } else if (status == "DENIED" ||
+              status == "CANCELED" ||
+              status == "ABORTED") {
+            // Define a mensagem de erro para a tela
+            if (status == "ABORTED") {
+              currentErrorMessage = "⚠️ Operação abortada na maquininha.";
+            } else if (status == "DENIED") {
+              currentErrorMessage = "⛔ Transação Negada pelo banco.";
+            } else {
+              currentErrorMessage = "❌ Operação Cancelada.";
             }
-            // ----------------------------------------
 
-            break; // Sai do loop pois já aprovou
-          } else if (status == "DENIED" || status == "CANCELED") {
-            // Se o simulador negar, a gente para de tentar
-            debugPrint("❌ Transação Negada pelo Simulador.");
+            // SALVA NO BANCO MESMO ASSIM!
+            // No lugar do comprovante, salvamos o motivo do erro.
+            _saveToDatabase(
+              id: idTransacao,
+              amount: amount,
+              status: status,
+              info: currentErrorMessage!, // Salva "Operação abortada..."
+            );
+
             break;
           }
         }
@@ -102,14 +119,34 @@ class HomeController {
       if (paid) {
         state.value = HomeState.success;
         _resetForm();
-        // Dica: Aqui você poderia abrir um Dialog mostrando o 'comprovante' na tela!
       } else {
-        debugPrint("⏰ O Simulador demorou demais ou não respondeu.");
+        currentErrorMessage ??= "⏰ Tempo excedido.";
         state.value = HomeState.error;
       }
     } catch (e) {
-      debugPrint("❌ Erro no fluxo: $e");
+      currentErrorMessage = "Erro de conexão: $e";
       state.value = HomeState.error;
+    }
+  }
+
+  // --- FUNÇÃO AUXILIAR PARA SALVAR (Evita repetir código) ---
+  Future<void> _saveToDatabase({
+    required String? id,
+    required double amount,
+    required String status,
+    required String info,
+  }) async {
+    try {
+      await DatabaseHelper().insertTransaction({
+        'transactionId': id ?? 'PENDENTE',
+        'value': amount,
+        'status': status,
+        'date': DateTime.now().toString(),
+        'receiptText': info, // Se aprovado é o Recibo, se erro é o Motivo
+      });
+      debugPrint("💾 Histórico salvo: $status");
+    } catch (e) {
+      debugPrint("⚠️ Erro ao salvar banco: $e");
     }
   }
 

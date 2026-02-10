@@ -1,8 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
-import 'package:brasil_fields/brasil_fields.dart';
-import 'package:payer_payment/app/views/history_page.dart';
-import '../controllers/home_controller.dart'; // Importe seu controller
+import 'package:payer_payment/app/core/app_colors.dart';
+import 'payment_page.dart';
+import 'history_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -12,194 +11,84 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  // Instanciamos o Controller
-  final controller = HomeController();
+  int _currentIndex = 0; // Controla qual ícone está pintado
+  late PageController _pageController; // Controla o deslize da tela
 
   @override
   void initState() {
     super.initState();
-    // Escuta mudanças de estado (Sucesso/Erro) para mostrar avisos
-    controller.state.addListener(() {
-      final state = controller.state.value;
-      if (state == HomeState.success) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('✅ Transação Enviada com Sucesso!'),
-            backgroundColor: Colors.green,
-          ),
-        );
-      } else if (state == HomeState.error) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('⚠️ Erro ao enviar. Verifique o valor.'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    });
+    _pageController = PageController(initialPage: _currentIndex);
+  }
+
+  @override
+  void dispose() {
+    _pageController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      // AppBar limpa, fixa no topo
       appBar: AppBar(
-        title: const Text('Payer Payment'),
-        actions: [
-          IconButton(
-            icon: const Icon(
-              Icons.receipt_long,
-            ), // Ícone de nota fiscal/histórico
-            onPressed: () {
-              // Navega para a tela de histórico (vamos criar ela abaixo)
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const HistoryPage()),
-              );
-            },
+        title: const Text(
+          'Payer Payment',
+          style: TextStyle(
+            fontWeight: FontWeight.bold,
+            color: AppColors.gray, // MUDANÇA: Texto Cinza (ou Preto)
           ),
-        ],
-        // -----------------------------
+        ),
+        centerTitle: true,
+        backgroundColor: Colors.white, // MUDANÇA: Fundo Branco
+        elevation: 0, // Sem sombra
+        // LINHA SUTIL EMBAIXO 👇
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(1.0),
+          child: Container(color: Colors.grey[200], height: 1.0),
+        ),
       ),
-      body: ValueListenableBuilder<HomeState>(
-        valueListenable: controller.state,
-        builder: (context, state, child) {
-          final isLoading = state == HomeState.loading;
 
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(
-                  Icons.point_of_sale,
-                  size: 80,
-                  color: Color(0xFF0056D2),
-                ),
-                const SizedBox(height: 30),
+      // PageView é o segredo para poder deslizar!
+      body: PageView(
+        controller: _pageController,
+        // Quando o usuário desliza com o dedo, atualizamos o ícone de baixo
+        onPageChanged: (index) {
+          setState(() {
+            _currentIndex = index;
+          });
+        },
+        children: const [
+          PaymentPage(), // Tela 0
+          HistoryPage(), // Tela 1
+        ],
+      ),
 
-                // Campo de Valor
-                TextFormField(
-                  controller: controller.valueController,
-                  enabled: !isLoading,
-                  keyboardType: TextInputType.number,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                  decoration: const InputDecoration(
-                    labelText: 'Valor',
-                    hintText: 'R\$ 0,00',
-                    border: OutlineInputBorder(),
-                  ),
-                  inputFormatters: [
-                    FilteringTextInputFormatter.digitsOnly,
-                    CentavosInputFormatter(moeda: true),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Botões de Tipo (Crédito/Débito)
-                Row(
-                  children: [
-                    // Botão Crédito
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          // Se estiver selecionado, fica Azul. Se não, Cinza.
-                          backgroundColor: controller.paymentType == 'CREDIT'
-                              ? const Color(0xFF0056D2)
-                              : Colors.grey[300],
-                          foregroundColor: controller.paymentType == 'CREDIT'
-                              ? Colors.white
-                              : Colors.black,
-                        ),
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                setState(
-                                  () => controller.paymentType = 'CREDIT',
-                                );
-                              },
-                        child: const Text('CRÉDITO'),
-                      ),
-                    ),
-                    const SizedBox(width: 10),
-                    // Botão Débito
-                    Expanded(
-                      child: ElevatedButton(
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: controller.paymentType == 'DEBIT'
-                              ? const Color(0xFF0056D2)
-                              : Colors.grey[300],
-                          foregroundColor: controller.paymentType == 'DEBIT'
-                              ? Colors.white
-                              : Colors.black,
-                        ),
-                        onPressed: isLoading
-                            ? null
-                            : () {
-                                setState(() {
-                                  controller.paymentType = 'DEBIT';
-                                  controller.installments =
-                                      1; // Reseta parcelas visualmente
-                                });
-                              },
-                        child: const Text('DÉBITO'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-
-                // Slider de Parcelas (Só aparece se for Crédito)
-                if (controller.paymentType == 'CREDIT') ...[
-                  Text(
-                    "Parcelas: ${controller.installments}x",
-                    style: const TextStyle(fontWeight: FontWeight.bold),
-                  ),
-                  Slider(
-                    value: controller.installments.toDouble(),
-                    min: 1,
-                    max: 12,
-                    divisions: 11,
-                    onChanged: isLoading
-                        ? null
-                        : (val) {
-                            setState(
-                              () => controller.installments = val.toInt(),
-                            );
-                          },
-                  ),
-                ],
-
-                const SizedBox(height: 32),
-
-                // Botão de Enviar
-                SizedBox(
-                  height: 56,
-                  child: ElevatedButton(
-                    onPressed: isLoading
-                        ? null
-                        : () {
-                            // Esconde o teclado
-                            FocusScope.of(context).unfocus();
-                            // Chama o Controller
-                            controller.startTransaction();
-                          },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: const Color(0xFF0056D2),
-                      foregroundColor: Colors.white,
-                    ),
-                    child: isLoading
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text("COBRAR", style: TextStyle(fontSize: 18)),
-                  ),
-                ),
-              ],
-            ),
+      // Barra de Navegação embaixo
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
+        onTap: (index) {
+          // Quando clica no botão, mandamos o PageView deslizar suavemente
+          _pageController.animateToPage(
+            index,
+            duration: const Duration(milliseconds: 300),
+            curve: Curves.ease,
           );
         },
+        selectedItemColor: AppColors.orange,
+        unselectedItemColor: AppColors.gray,
+        showUnselectedLabels: true,
+        // Deixa a barra com uma sombrinha suave pra cima
+        elevation: 10,
+        items: const [
+          BottomNavigationBarItem(
+            icon: Icon(Icons.point_of_sale),
+            label: 'Cobrar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.history), // Ou Icons.receipt_long
+            label: 'Histórico',
+          ),
+        ],
       ),
     );
   }

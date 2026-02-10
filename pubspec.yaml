@@ -39,6 +39,7 @@ dependencies:
   google_fonts: ^8.0.0
   dio: ^5.9.1
   sqflite: ^2.4.2
+  flutter_svg: ^2.0.10
 
 dev_dependencies:
   flutter_test:
@@ -62,7 +63,8 @@ flutter:
   uses-material-design: true
 
   # To add assets to your application, add an assets section, like this:
-  # assets:
+  assets:
+    - assets/images/payer.svg
   #   - images/a_dot_burr.jpeg
   #   - images/a_dot_ham.jpeg
 
