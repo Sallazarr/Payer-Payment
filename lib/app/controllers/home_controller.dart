@@ -4,6 +4,9 @@ import 'package:payer_payment/app/models/transaction_payload.dart';
 import 'package:payer_payment/app/repositories/transaction_repository.dart';
 import 'package:uuid/uuid.dart';
 
+// Import do Banco de Dados
+import 'package:payer_payment/app/database/database_helper.dart';
+
 enum HomeState { idle, loading, success, error }
 
 class HomeController {
@@ -66,9 +69,28 @@ class HomeController {
             // Pega o comprovante bonitinho que o simulador mandou
             comprovante = response['shopTextReceipt'];
 
-            // Exibe o comprovante no console (ou futuramente imprime)
             debugPrint("🧾 COMPROVANTE RECEBIDO:\n$comprovante");
-            break;
+
+            // --- 💾 SALVANDO NO SQLITE (BLINDADO) ---
+            try {
+              await DatabaseHelper().insertTransaction({
+                'transactionId': idTransacao ?? 'N/A',
+                'value': amount,
+                'status': status,
+                'date': DateTime.now().toString(),
+                'receiptText': comprovante ?? 'Sem comprovante disponível',
+              });
+              debugPrint("✅ Venda salva no histórico local com sucesso!");
+            } catch (dbError) {
+              // Se der erro no banco, SÓ avisa no log.
+              // NÃO podemos travar o App, pois o cliente JÁ PAGOU!
+              debugPrint(
+                "⚠️ Erro ao salvar no banco (mas o pagamento ocorreu): $dbError",
+              );
+            }
+            // ----------------------------------------
+
+            break; // Sai do loop pois já aprovou
           } else if (status == "DENIED" || status == "CANCELED") {
             // Se o simulador negar, a gente para de tentar
             debugPrint("❌ Transação Negada pelo Simulador.");

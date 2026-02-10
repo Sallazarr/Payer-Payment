@@ -4,9 +4,9 @@ class PayerConfig {
   static const String username = "SEU_EMAIL_AQUI";
   static const String password = "SUA_SENHA_AQUI";
 
-  static const String companyId = "000001";
-  static const String storeId = "0004";
-  static const String terminalId = "01";
+  static const String companyId = "SEU_COMPANY_ID";
+  static const String storeId = "SEU_STORE_ID";
+  static const String terminalId = "SEU_TERMINAL_ID";
 
   static const String tokenUrl = "URL_TOKEN_AQUI";
   static const String validate = "URL_VALIDATE_AQUI";

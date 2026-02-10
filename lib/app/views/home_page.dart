@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:brasil_fields/brasil_fields.dart';
+import 'package:payer_payment/app/views/history_page.dart';
 import '../controllers/home_controller.dart'; // Importe seu controller
 
 class HomePage extends StatefulWidget {
@@ -41,8 +42,24 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Payer Payment')),
-      // ValueListenableBuilder reconstrói a tela quando o estado muda (ex: Loading)
+      appBar: AppBar(
+        title: const Text('Payer Payment'),
+        actions: [
+          IconButton(
+            icon: const Icon(
+              Icons.receipt_long,
+            ), // Ícone de nota fiscal/histórico
+            onPressed: () {
+              // Navega para a tela de histórico (vamos criar ela abaixo)
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const HistoryPage()),
+              );
+            },
+          ),
+        ],
+        // -----------------------------
+      ),
       body: ValueListenableBuilder<HomeState>(
         valueListenable: controller.state,
         builder: (context, state, child) {
