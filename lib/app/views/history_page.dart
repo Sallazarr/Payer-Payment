@@ -105,6 +105,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 final String statusText = isApproved ? "Aprovada" : "Recusada";
 
                 return Card(
+                  color: Colors.grey[200],
                   margin: const EdgeInsets.symmetric(
                     horizontal: 16,
                     vertical: 6,
