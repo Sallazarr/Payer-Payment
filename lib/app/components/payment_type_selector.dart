@@ -24,15 +24,14 @@ class PaymentTypeSelector extends StatelessWidget {
         _buildButton("DÉBITO", "DEBIT"),
         const SizedBox(width: 8),
 
-        // PIX (O Novo!) 💠
+        // PIX  💠
         Expanded(
           child: SizedBox(
             height: 50,
             child: ElevatedButton(
               style: ElevatedButton.styleFrom(
-                // Se for PIX, usa Verde para destacar, se não cinza
                 backgroundColor: selectedType == 'PIX'
-                    ? const Color(0xFF32BCAD) // Um verde "estilo Pix"
+                    ? const Color(0xFF32BCAD)
                     : Colors.grey[200],
                 foregroundColor: selectedType == 'PIX'
                     ? Colors.white
@@ -41,7 +40,7 @@ class PaymentTypeSelector extends StatelessWidget {
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(8),
                 ),
-                padding: EdgeInsets.zero, // Para caber o texto
+                padding: EdgeInsets.zero,
               ),
               onPressed: isLoading ? null : () => onTypeChanged("PIX"),
               child: Row(
@@ -79,7 +78,7 @@ class PaymentTypeSelector extends StatelessWidget {
           child: Text(
             label,
             style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
-          ), // Fonte menor pra caber
+          ),
         ),
       ),
     );

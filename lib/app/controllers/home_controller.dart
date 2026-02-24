@@ -32,7 +32,7 @@ class HomeController {
       );
       final String correlationId = const Uuid().v4();
 
-      // Configuração do Payload (Mantendo sua lógica do Pix que funciona)
+      // Configuração do Payload
       String finalPaymentMethod;
       String finalPaymentType;
       String finalSubType;
@@ -64,8 +64,8 @@ class HomeController {
 
       bool paid = false;
 
-      for (int i = 0; i < 15; i++) {
-        await Future.delayed(const Duration(seconds: 3));
+      for (int i = 0; i < 30; i++) {
+        await Future.delayed(const Duration(seconds: 2));
         final response = await _repository.checkPaymentStatus(correlationId);
 
         if (response != null) {
@@ -88,27 +88,35 @@ class HomeController {
             );
 
             break;
-
-            // --- CASO 2: NEGADO/CANCELADO/ABORTADO ❌ ---
           } else if (status == "DENIED" ||
               status == "CANCELED" ||
-              status == "ABORTED") {
-            // Define a mensagem de erro para a tela
-            if (status == "ABORTED") {
-              currentErrorMessage = "⚠️ Operação abortada na maquininha.";
-            } else if (status == "DENIED") {
-              currentErrorMessage = "⛔ Transação Negada pelo banco.";
-            } else {
-              currentErrorMessage = "❌ Operação Cancelada.";
+              status == "ABORTED" ||
+              status == "REJECTED") {
+            String? apiMessage;
+
+            if (response['rejectionInfo'] != null) {
+              apiMessage = response['rejectionInfo']['rejectionMessage'];
             }
 
-            // SALVA NO BANCO MESMO ASSIM!
-            // No lugar do comprovante, salvamos o motivo do erro.
+            if (apiMessage != null && apiMessage.isNotEmpty) {
+              currentErrorMessage = apiMessage;
+            } else {
+              // Se a API não mandar nada, usamos textos de fallback
+              if (status == "ABORTED") {
+                currentErrorMessage = "⚠️ Operação abortada na maquininha.";
+              } else if (status == "DENIED") {
+                currentErrorMessage = "⛔ Transação Negada pelo banco.";
+              } else {
+                currentErrorMessage = "❌ Operação Cancelada.";
+              }
+            }
+
+            // SALVA NO BANCO O MOTIVO EXATO
             _saveToDatabase(
               id: idTransacao,
               amount: amount,
               status: status,
-              info: currentErrorMessage!, // Salva "Operação abortada..."
+              info: currentErrorMessage!,
             );
 
             break;

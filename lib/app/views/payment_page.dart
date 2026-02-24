@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart'; // Importe o SVG
+import 'package:flutter_svg/flutter_svg.dart';
 import 'package:brasil_fields/brasil_fields.dart';
 import 'package:payer_payment/app/core/app_colors.dart';
 import 'package:payer_payment/app/core/app_images.dart';
@@ -44,12 +44,12 @@ class _PaymentPageState extends State<PaymentPage> {
     });
   }
 
-  // Helper de Botões (Atualizado com as novas cores)
+  // Helper de Botões
   Widget _buildPaymentButton({
     required String label,
     required String value,
     required IconData icon,
-    Color activeColor = AppColors.orange, // Usa o Laranja por padrão
+    Color activeColor = AppColors.orange,
   }) {
     final isSelected = controller.paymentType == value;
     final isLoading = controller.state.value == HomeState.loading;
@@ -110,15 +110,8 @@ class _PaymentPageState extends State<PaymentPage> {
             children: [
               const SizedBox(height: 20),
 
-              // LOGO PAYER (Substituindo o Ícone)
-              SizedBox(
-                height: 60, // Ajuste a altura conforme necessário
-                child: SvgPicture.asset(
-                  AppImages.logo,
-                  // Se o SVG for preto, você pode forçar a cor assim:
-                  // colorFilter: ColorFilter.mode(AppColors.primary, BlendMode.srcIn),
-                ),
-              ),
+              // LOGO PAYER
+              SizedBox(height: 60, child: SvgPicture.asset(AppImages.logo)),
 
               const SizedBox(height: 40),
 
@@ -131,11 +124,11 @@ class _PaymentPageState extends State<PaymentPage> {
                 style: const TextStyle(
                   fontSize: 32,
                   fontWeight: FontWeight.bold,
-                  color: AppColors.gray, // Cinza Chumbo
+                  color: AppColors.grey,
                 ),
                 decoration: const InputDecoration(
                   labelText: 'Valor',
-                  labelStyle: TextStyle(color: AppColors.gray),
+                  labelStyle: TextStyle(color: AppColors.grey),
                   hintText: 'R\$ 0,00',
                   border: OutlineInputBorder(),
                   focusedBorder: OutlineInputBorder(
@@ -161,14 +154,14 @@ class _PaymentPageState extends State<PaymentPage> {
                   _buildPaymentButton(
                     label: "DÉBITO",
                     value: "DEBIT",
-                    icon: Icons.credit_card_off,
+                    icon: Icons.credit_card,
                   ),
                   const SizedBox(width: 8),
                   _buildPaymentButton(
                     label: "PIX",
                     value: "PIX",
                     icon: Icons.qr_code_2,
-                    activeColor: AppColors.orange, // Verde do Pix
+                    activeColor: AppColors.orange,
                   ),
                 ],
               ),
@@ -181,7 +174,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   "Parcelas: ${controller.installments}x",
                   style: const TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: AppColors.gray,
+                    color: AppColors.grey,
                   ),
                 ),
                 Slider(
@@ -189,7 +182,7 @@ class _PaymentPageState extends State<PaymentPage> {
                   min: 1,
                   max: 12,
                   divisions: 11,
-                  activeColor: AppColors.orange, // Laranja
+                  activeColor: AppColors.orange,
                   thumbColor: AppColors.orange,
                   onChanged: isLoading
                       ? null
@@ -212,7 +205,7 @@ class _PaymentPageState extends State<PaymentPage> {
                           controller.startTransaction();
                         },
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.orange, // Laranja
+                    backgroundColor: AppColors.orange,
                     foregroundColor: Colors.white,
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(10),

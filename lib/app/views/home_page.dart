@@ -33,22 +33,17 @@ class _HomePageState extends State<HomePage> {
       appBar: AppBar(
         title: const Text(
           'Payer Payment',
-          style: TextStyle(
-            fontWeight: FontWeight.bold,
-            color: AppColors.gray, // MUDANÇA: Texto Cinza (ou Preto)
-          ),
+          style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.grey),
         ),
         centerTitle: true,
-        backgroundColor: Colors.white, // MUDANÇA: Fundo Branco
-        elevation: 0, // Sem sombra
-        // LINHA SUTIL EMBAIXO 👇
+        backgroundColor: Colors.white,
+        elevation: 0,
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(1.0),
           child: Container(color: Colors.grey[200], height: 1.0),
         ),
       ),
 
-      // PageView é o segredo para poder deslizar!
       body: PageView(
         controller: _pageController,
         // Quando o usuário desliza com o dedo, atualizamos o ícone de baixo
@@ -67,7 +62,6 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (index) {
-          // Quando clica no botão, mandamos o PageView deslizar suavemente
           _pageController.animateToPage(
             index,
             duration: const Duration(milliseconds: 300),
@@ -75,9 +69,9 @@ class _HomePageState extends State<HomePage> {
           );
         },
         selectedItemColor: AppColors.orange,
-        unselectedItemColor: AppColors.gray,
+        unselectedItemColor: AppColors.grey,
         showUnselectedLabels: true,
-        // Deixa a barra com uma sombrinha suave pra cima
+
         elevation: 10,
         items: const [
           BottomNavigationBarItem(
@@ -85,7 +79,7 @@ class _HomePageState extends State<HomePage> {
             label: 'Cobrar',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.history), // Ou Icons.receipt_long
+            icon: Icon(Icons.history),
             label: 'Histórico',
           ),
         ],

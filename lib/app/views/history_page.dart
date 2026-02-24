@@ -22,8 +22,6 @@ class _HistoryPageState extends State<HistoryPage> {
 
   Future<void> _loadData() async {
     var data = await DatabaseHelper().getTransactions();
-    // Inverte a lista: o mais recente (topo) é o último que entrou
-    data = data.reversed.toList();
 
     setState(() {
       _transactions = data;
@@ -52,7 +50,7 @@ class _HistoryPageState extends State<HistoryPage> {
       appBar: AppBar(
         title: const Text(
           "Histórico de Vendas",
-          style: TextStyle(color: AppColors.gray, fontWeight: FontWeight.bold),
+          style: TextStyle(color: AppColors.grey, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
         backgroundColor: Colors.white,
@@ -75,7 +73,7 @@ class _HistoryPageState extends State<HistoryPage> {
                   const SizedBox(height: 16),
                   const Text(
                     "Nenhuma venda registrada.",
-                    style: TextStyle(fontSize: 18, color: AppColors.gray),
+                    style: TextStyle(fontSize: 18, color: AppColors.grey),
                   ),
                 ],
               ),
@@ -134,7 +132,7 @@ class _HistoryPageState extends State<HistoryPage> {
                         style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 18,
-                          color: AppColors.gray,
+                          color: AppColors.grey,
                         ),
                       ),
 
@@ -180,36 +178,52 @@ class _HistoryPageState extends State<HistoryPage> {
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
+        backgroundColor: Colors.grey[200],
+        surfaceTintColor: Colors.grey,
+        insetPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 24),
+
+        contentPadding: const EdgeInsets.only(
+          top: 16,
+          bottom: 0,
+          left: 16,
+          right: 16,
+        ),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        // Título colorido combinando com o status
         title: Row(
           children: [
             Icon(
               isApproved ? Icons.check_circle : Icons.error,
               color: colorHeader,
             ),
-            const SizedBox(width: 10),
+            const SizedBox(width: 8),
             Text(
               isApproved ? "Comprovante" : "Erro",
-              style: TextStyle(color: colorHeader),
+              style: TextStyle(color: colorHeader, fontSize: 18),
             ),
           ],
         ),
-        content: SingleChildScrollView(
-          child: Container(
-            width: double.maxFinite,
-            padding: const EdgeInsets.all(12),
-            decoration: BoxDecoration(
-              color: Colors.grey[50],
-              borderRadius: BorderRadius.circular(8),
-              border: Border.all(color: Colors.grey[300]!),
-            ),
-            child: Text(
-              receipt,
-              style: const TextStyle(
-                fontFamily: 'Courier',
-                fontSize: 13,
-                color: Colors.black87,
+        content: SizedBox(
+          width: double
+              .maxFinite, // Força o conteúdo a ocupar a largura nova do dialog
+          child: SingleChildScrollView(
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey[300]!),
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  receipt,
+                  softWrap: false,
+                  style: const TextStyle(
+                    fontFamily: 'monospace',
+                    fontSize: 13,
+                    color: Colors.black87,
+                  ),
+                ),
               ),
             ),
           ),

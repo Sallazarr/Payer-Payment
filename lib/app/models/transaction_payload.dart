@@ -26,10 +26,10 @@ class TransactionPayload {
         "callbackUrl": PayerConfig.callbackUrl,
         "correlationId": customCorrelationId ?? const Uuid().v4(),
         "flow": "SYNC",
-        "automationName": PayerConfig.automationName, // fornecido no onboarding
+        "automationName": PayerConfig.automationName,
         "receiver": {
-          "companyId": PayerConfig.companyId, // fornecido no onboarding
-          "storeId": PayerConfig.storeId, // fornecido no onboarding
+          "companyId": PayerConfig.companyId,
+          "storeId": PayerConfig.storeId,
           "terminalId": PayerConfig.terminalId,
         },
         "message": {

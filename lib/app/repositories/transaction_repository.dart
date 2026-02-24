@@ -1,5 +1,5 @@
 import 'dart:convert';
-import 'dart:math';
+
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
 import 'package:payer_payment/app/core/constants.dart';
@@ -36,7 +36,7 @@ class TransactionRepository {
         debugPrint("Tipo do erro: ${e.type}");
         throw Exception("Sem conexão com a internet");
       }
-      // ERRO DA API (Servidor respondeu com erro 4xx ou 5xx)
+      // ERRO DA API
       else {
         debugPrint("[AUTH] API Recusou:");
         debugPrint("Status: ${e.response?.statusCode}");
@@ -97,19 +97,20 @@ class TransactionRepository {
 
       if (requests.isEmpty) return null;
 
-      // PROCURA NA LISTA: Vamos varrer todas as mensagens até achar a nossa
+      // PROCURA NA LISTA
       for (var request in requests) {
         final String contentString = request['content'];
 
-        // Dica de segurança: verificar se é um JSON válido antes de tentar ler
+        // verificar se é um JSON válido antes de tentar ler
         if (contentString.isEmpty) continue;
 
         try {
           final Map<String, dynamic> payerData = jsonDecode(contentString);
 
-          // O PULO DO GATO 😺:
           // Só retorna se o ID da mensagem for igual ao ID que nós enviamos
           if (payerData['correlationId'] == meuCorrelationId) {
+            debugPrint("📥 JSON DO POLLING (RESPOSTA): $payerData");
+
             return payerData;
           }
         } catch (e) {
